@@ -22,8 +22,7 @@ export default function Home() {
 
   const fetchTodos = useCallback(async () => {
     try {
-      const params = filter === "all" ? "" : `?status=${filter}`;
-      const res = await fetch(`${API_URL}/todos${params}`);
+      const res = await fetch(`${API_URL}/todos`);
       if (!res.ok) throw new Error("Failed to fetch todos");
       const data = await res.json();
       setTodos(data);
@@ -33,11 +32,20 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  }, []);
 
   useEffect(() => {
     fetchTodos();
   }, [fetchTodos]);
+
+  const filteredTodos = todos.filter((todo) => {
+    if (filter === "active") return !todo.completed;
+    if (filter === "completed") return todo.completed;
+    return true;
+  });
+
+  const activeCount = todos.filter((todo) => !todo.completed).length;
+  const completedCount = todos.filter((todo) => todo.completed).length;
 
   const addTodo = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,6 +93,21 @@ export default function Home() {
     }
   };
 
+  const clearCompleted = async () => {
+    try {
+      const completedTodos = todos.filter((todo) => todo.completed);
+      await Promise.all(
+        completedTodos.map((todo) =>
+          fetch(`${API_URL}/todos/${todo.id}`, { method: "DELETE" })
+        )
+      );
+      setError(null);
+      await fetchTodos();
+    } catch {
+      setError("Failed to clear completed todos.");
+    }
+  };
+
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>Todo App</h1>
@@ -124,7 +147,7 @@ export default function Home() {
 
       {loading ? (
         <div className={styles.loading}>Loading...</div>
-      ) : todos.length === 0 ? (
+      ) : filteredTodos.length === 0 ? (
         <div className={styles.empty}>
           {filter === "all"
             ? "No todos yet. Add one above!"
@@ -132,7 +155,7 @@ export default function Home() {
         </div>
       ) : (
         <ul className={styles.list}>
-          {todos.map((todo) => (
+          {filteredTodos.map((todo) => (
             <li key={todo.id} className={styles.todoItem}>
               <div
                 className={`${styles.checkbox} ${
@@ -169,6 +192,19 @@ export default function Home() {
             </li>
           ))}
         </ul>
+      )}
+
+      {todos.length > 0 && (
+        <div className={styles.footer}>
+          <span className={styles.itemCount}>
+            {activeCount} {activeCount === 1 ? "item" : "items"} left
+          </span>
+          {completedCount > 0 && (
+            <button className={styles.clearButton} onClick={clearCompleted}>
+              Clear completed
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
