@@ -53,6 +53,7 @@ export default function Home() {
       if (!res.ok) throw new Error("Failed to add todo");
       setNewTitle("");
       setError(null);
+      setFilter("all");
       await fetchTodos();
     } catch {
       setError("Failed to add todo.");
