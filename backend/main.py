@@ -21,6 +21,10 @@ class TodoCreate(BaseModel):
     title: str
 
 
+class TodoUpdate(BaseModel):
+    title: str
+
+
 class TodoResponse(BaseModel):
     id: int
     title: str
@@ -43,6 +47,17 @@ def create_todo(body: TodoCreate):
     next_id += 1
     todos.append(todo)
     return todo
+
+
+@app.put("/todos/{todo_id}", response_model=TodoResponse)
+def update_todo(todo_id: int, body: TodoUpdate):
+    if not body.title.strip():
+        raise HTTPException(status_code=422, detail="Title must not be empty")
+    for todo in todos:
+        if todo["id"] == todo_id:
+            todo["title"] = body.title
+            return todo
+    raise HTTPException(status_code=404, detail="Todo not found")
 
 
 @app.patch("/todos/{todo_id}", response_model=TodoResponse)
