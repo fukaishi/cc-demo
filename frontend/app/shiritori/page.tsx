@@ -2,80 +2,81 @@
 
 import { useState } from "react";
 import styles from "./page.module.css";
-import { lastKana } from "./kana";
-import { mockStats, type NodeStats } from "./mockStats";
-import { CHOICES_BY_KANA, MAX_STEPS, START_WORD } from "./routes";
-
-type Answer = {
-  fromWord: string;
-  choices: string[];
-  choice: string;
-};
+import { fetchResult, sendAnswer, startPlay, type PlayResult, type PlayState } from "./api";
 
 type Phase = "title" | "question" | "result";
 
-function choicesFor(word: string): string[] {
-  return CHOICES_BY_KANA[lastKana(word)] ?? [];
-}
-
-function rateOf(stats: NodeStats, word: string): number {
-  return Math.round((stats.counts[word] / stats.total) * 100);
-}
-
-function topOf(stats: NodeStats): string {
-  return Object.entries(stats.counts).sort((a, b) => b[1] - a[1])[0][0];
-}
-
 export default function Shiritori() {
   const [phase, setPhase] = useState<Phase>("title");
-  const [answers, setAnswers] = useState<Answer[]>([]);
+  const [play, setPlay] = useState<PlayState | null>(null);
+  const [result, setResult] = useState<PlayResult | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const currentWord = answers.length ? answers[answers.length - 1].choice : START_WORD;
-  const step = answers.length + 1;
-
-  const start = () => {
-    setAnswers([]);
-    setPhase("question");
+  const run = async (task: () => Promise<void>) => {
+    setBusy(true);
+    setError(null);
+    try {
+      await task();
+    } catch (e) {
+      setError(e instanceof TypeError ? "サーバーに接続できません。バックエンドは起動していますか？" : String((e as Error).message));
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const choose = (choice: string) => {
-    const next = [...answers, { fromWord: currentWord, choices: choicesFor(currentWord), choice }];
-    setAnswers(next);
-    if (next.length === MAX_STEPS) setPhase("result");
-  };
+  const start = () =>
+    run(async () => {
+      setPlay(await startPlay());
+      setResult(null);
+      setPhase("question");
+    });
+
+  const choose = (choice: string) =>
+    run(async () => {
+      if (!play) return;
+      const next = await sendAnswer(play.play_id, play.step, choice);
+      if (next.finished) {
+        setResult(await fetchResult(next.play_id));
+        setPhase("result");
+      }
+      setPlay(next);
+    });
 
   return (
     <main className={styles.container}>
       <h1 className={styles.logo}>しりとりんご</h1>
 
+      {error && <p className={styles.error}>{error}</p>}
+
       {phase === "title" && (
         <section className={styles.card}>
           <p className={styles.lead}>
-            「りんご」から始まるしりとりを4択で5回。
+            「しりとり」から始まるしりとりを4択で5回。
             <br />
             みんなが一番選んだ答えを当てよう。
           </p>
-          <button className={styles.primary} onClick={start}>
+          <button className={styles.primary} onClick={start} disabled={busy}>
             はじめる
           </button>
         </section>
       )}
 
-      {phase === "question" && (
+      {phase === "question" && play && (
         <section className={styles.card}>
           <p className={styles.step}>
-            {step} / {MAX_STEPS}
+            {play.step} / {play.max_steps}
           </p>
           <ol className={styles.chain}>
-            {[START_WORD, ...answers.map((a) => a.choice)].map((w, i) => (
+            {play.history.map((w, i) => (
               <li key={i}>{w}</li>
             ))}
           </ol>
-          <p className={styles.current}>{currentWord}</p>
-          <p className={styles.prompt}>「{lastKana(currentWord)}」で始まるのは？</p>
+          <p className={styles.current}>{play.word}</p>
+          <p className={styles.prompt}>「{play.kana}」で始まるのは？</p>
           <div className={styles.choices}>
-            {choicesFor(currentWord).map((c) => (
-              <button key={c} className={styles.choice} onClick={() => choose(c)}>
+            {play.choices.map((c) => (
+              <button key={c} className={styles.choice} onClick={() => choose(c)} disabled={busy}>
                 {c}
               </button>
             ))}
@@ -83,39 +84,33 @@ export default function Shiritori() {
         </section>
       )}
 
-      {phase === "result" && <Result answers={answers} onRetry={start} />}
+      {phase === "result" && result && <Result result={result} onRetry={start} busy={busy} />}
     </main>
   );
 }
 
-function Result({ answers, onRetry }: { answers: Answer[]; onRetry: () => void }) {
-  const rows = answers.map((a) => {
-    const stats = mockStats(a.fromWord, a.choices);
-    return { ...a, stats, top: topOf(stats), rate: rateOf(stats, a.choice) };
-  });
-  const score = Math.round(rows.reduce((sum, r) => sum + r.rate, 0) / rows.length);
-  const hits = rows.filter((r) => r.choice === r.top).length;
-
+function Result({ result, onRetry, busy }: { result: PlayResult; onRetry: () => void; busy: boolean }) {
   return (
     <section className={styles.card}>
       <p className={styles.scoreLabel}>みんな度</p>
-      <p className={styles.score}>{score}%</p>
+      <p className={styles.score}>{result.score}%</p>
       <p className={styles.hits}>
-        1位と一致: {hits} / {rows.length}
+        1位と一致: {result.hits} / {result.steps.length}
       </p>
 
       <ol className={styles.steps}>
-        {rows.map((r, i) => (
-          <li key={i} className={styles.stepRow}>
+        {result.steps.map((s) => (
+          <li key={s.step}>
             <p className={styles.stepHead}>
-              {i + 1}. {r.fromWord} → <strong>{r.choice}</strong>
-              {r.choice === r.top && <span className={styles.badge}>1位</span>}
+              {s.step}. {s.from_word} → <strong>{s.choice}</strong>
+              {s.is_top && <span className={styles.badge}>1位</span>}
+              <span className={styles.total}>{s.total}人</span>
             </p>
-            {r.choices.map((c) => {
-              const rate = rateOf(r.stats, c);
+            {Object.entries(s.counts).map(([word, count]) => {
+              const rate = s.total ? Math.round((count / s.total) * 100) : 0;
               return (
-                <div key={c} className={styles.bar} data-mine={c === r.choice}>
-                  <span className={styles.barLabel}>{c}</span>
+                <div key={word} className={styles.bar} data-mine={word === s.choice}>
+                  <span className={styles.barLabel}>{word}</span>
                   <span className={styles.barTrack}>
                     <span className={styles.barFill} style={{ width: `${rate}%` }} />
                   </span>
@@ -127,8 +122,8 @@ function Result({ answers, onRetry }: { answers: Answer[]; onRetry: () => void }
         ))}
       </ol>
 
-      <p className={styles.note}>※サンプルのため集計はダミー値です。回答は保存されません。</p>
-      <button className={styles.primary} onClick={onRetry}>
+      <p className={styles.note}>※同じ端末からの回答は、各単語につき最初の1回だけ集計します。</p>
+      <button className={styles.primary} onClick={onRetry} disabled={busy}>
         もう一度
       </button>
     </section>

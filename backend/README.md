@@ -24,3 +24,21 @@ The API will be available at http://localhost:8000.
 | POST | /todos | Create a todo (`{"title": "..."}`) |
 | PATCH | /todos/{id} | Toggle completed status |
 | DELETE | /todos/{id} | Delete a todo |
+
+## しりとりんご
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | /shiritori/plays | Start a play (`{"player_id": "..."}`) |
+| GET | /shiritori/plays/{id} | Current state |
+| POST | /shiritori/plays/{id}/answers | Answer (`{"step": 1, "choice": "りんご"}`) |
+| GET | /shiritori/plays/{id}/result | Result with vote counts |
+
+Answers are stored in SQLite (`shiritori.db`, override with `SHIRITORI_DB`).
+Route data is `shiritori/routes.json`.
+
+```bash
+python -m shiritori.validate          # validate route data
+pip install -r requirements-dev.txt
+pytest                                # run tests
+```

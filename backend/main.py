@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from shiritori.api import router as shiritori_router
+
 app = FastAPI(title="Todo API")
 
 app.add_middleware(
@@ -11,6 +13,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(shiritori_router)
 
 # In-memory storage
 todos: list[dict] = []

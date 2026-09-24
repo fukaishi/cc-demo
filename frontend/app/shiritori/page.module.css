@@ -179,3 +179,25 @@
   color: var(--color-text-secondary);
   margin-bottom: 12px;
 }
+
+.total {
+  float: right;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.error {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--color-danger);
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+}
+
+.primary:disabled,
+.choice:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
