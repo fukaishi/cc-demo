@@ -1,0 +1,181 @@
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 32px 16px;
+}
+
+.logo {
+  font-size: 28px;
+  font-weight: 800;
+  text-align: center;
+  color: #dc2626;
+  margin-bottom: 20px;
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 24px 20px;
+}
+
+.lead {
+  line-height: 1.8;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.primary {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  background: #dc2626;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.primary:hover {
+  background: #b91c1c;
+}
+
+.step {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  text-align: right;
+}
+
+.chain {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  list-style: none;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-bottom: 16px;
+}
+
+.chain li + li::before {
+  content: "→ ";
+}
+
+.current {
+  font-size: 40px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.prompt {
+  text-align: center;
+  color: var(--color-text-secondary);
+  margin: 4px 0 20px;
+}
+
+.choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.choice {
+  padding: 18px 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text);
+  background: #fef2f2;
+  border: 2px solid #fecaca;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.choice:hover {
+  border-color: #dc2626;
+}
+
+.scoreLabel {
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.score {
+  font-size: 56px;
+  font-weight: 800;
+  text-align: center;
+  color: #dc2626;
+  line-height: 1.1;
+}
+
+.hits {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.steps {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.stepHead {
+  margin-bottom: 6px;
+}
+
+.badge {
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 12px;
+  color: #fff;
+  background: #dc2626;
+  border-radius: 4px;
+}
+
+.bar {
+  display: grid;
+  grid-template-columns: 7em 1fr 3em;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  padding: 2px 0;
+}
+
+.bar[data-mine="true"] {
+  font-weight: 700;
+}
+
+.barLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barTrack {
+  height: 10px;
+  background: var(--color-border);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  background: #9ca3af;
+}
+
+.bar[data-mine="true"] .barFill {
+  background: #dc2626;
+}
+
+.barRate {
+  text-align: right;
+}
+
+.note {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-bottom: 12px;
+}
